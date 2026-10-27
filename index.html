@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>目標理財規劃器 ‧ PV／FV／PMT</title>
+<style>
+:root{--bg:#f6f7f4;--card:#fff;--ink:#1d2b24;--mute:#667a70;--line:#dfe5df;--brand:#1f7a5a;--brand2:#e0f1e9;--warn:#c2410c;--warnbg:#fdeee3;--ok:#166534;--okbg:#dcf5e4;--grid:#e8ece8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#111a16;--card:#1a2620;--ink:#e6efe9;--mute:#93a89c;--line:#2a3a32;--brand:#4cc79a;--brand2:#1f3a2e;--warn:#fb9a5e;--warnbg:#3a2415;--ok:#7fe0a5;--okbg:#17372a;--grid:#26342d}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#111a16;--card:#1a2620;--ink:#e6efe9;--mute:#93a89c;--line:#2a3a32;--brand:#4cc79a;--brand2:#1f3a2e;--warn:#fb9a5e;--warnbg:#3a2415;--ok:#7fe0a5;--okbg:#17372a;--grid:#26342d}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.6rem;margin:.2em 0}.sub{color:var(--mute);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+h2{font-size:1.05rem;margin:0 0 12px}
+.chips,.seg{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;color:inherit;cursor:pointer}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px}
+.chip:hover{border-color:var(--brand)}
+.seg button{flex:1;min-width:140px;border:1px solid var(--line);background:var(--card);padding:10px 12px;border-radius:10px;text-align:left}
+.seg button small{display:block;color:var(--mute);font-size:.8rem}
+.seg button.on{background:var(--brand2);border-color:var(--brand)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+label{display:block;font-size:.85rem;color:var(--mute)}
+label b{color:var(--ink);font-weight:600}
+input[type=number],input[type=text]{width:100%;font:inherit;padding:9px 10px;margin-top:4px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--brand)}
+.hide{display:none!important}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi.main{background:var(--brand2);border-color:var(--brand)}
+.kpi span{font-size:.8rem;color:var(--mute)}.kpi div{font-size:1.35rem;font-weight:700;word-break:break-all}
+.badge{display:inline-block;padding:4px 12px;border-radius:999px;font-weight:600;font-size:.9rem}
+.ok{background:var(--okbg);color:var(--ok)}.bad{background:var(--warnbg);color:var(--warn)}
+.chart{overflow-x:auto}svg{width:100%;min-width:480px;height:auto;display:block}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{color:var(--mute);font-weight:500}
+.tbl{overflow-x:auto}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-weight:600}
+.btn.ghost{background:none;color:var(--brand);border:1px solid var(--brand)}
+.goal{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.goal:last-child{border:0}.goal a{cursor:pointer;color:var(--brand)}
+.bar{height:8px;background:var(--grid);border-radius:4px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--brand)}
+.note{font-size:.82rem;color:var(--mute);margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🎯 目標理財規劃器</h1>
+<p class="sub">用 PV（現值）、FV（終值）、PMT（每期存款）三個變數，反推你的理財目標需要多少時間、多少錢。</p>
+
+<div class="card">
+<h2>① 選擇目標範本</h2>
+<div class="chips" id="presets"></div>
+</div>
+
+<div class="card">
+<h2>② 你想知道什麼？</h2>
+<div class="seg" id="modes"></div>
+</div>
+
+<div class="card">
+<h2>③ 輸入條件</h2>
+<label style="margin-bottom:14px">目標名稱<input type="text" id="goal" value="退休金"></label>
+<div class="grid">
+<label id="f_target">目標金額（今天的購買力）<input type="number" id="target" min="0" step="10000"></label>
+<label id="f_pv">PV 現有本金（NT$）<input type="number" id="pv" min="0" step="10000"></label>
+<label id="f_pmt">PMT 每月投入（NT$）<input type="number" id="pmt" min="0" step="1000"></label>
+<label>期間：<b id="yv"></b> 年<input type="range" id="years" min="1" max="40"></label>
+<label>預期年報酬率：<b id="rv"></b>%<input type="range" id="rate" min="0" max="12" step="0.5"></label>
+<label>通膨率：<b id="iv"></b>%<input type="range" id="infl" min="0" max="6" step="0.5"></label>
+</div>
+<label class="row" style="margin-top:12px;flex-direction:row;gap:8px"><input type="checkbox" id="inflOn" checked> 目標金額依通膨調整（到期時實際需要的名目金額）</label>
+</div>
+
+<div class="card">
+<h2>④ 分析結果 <span id="status" class="badge"></span></h2>
+<div class="res" id="res"></div>
+<p class="note" id="msg"></p>
+</div>
+
+<div class="card">
+<h2>資產成長軌跡</h2>
+<div class="chart"><svg id="chart" viewBox="0 0 640 300"></svg></div>
+</div>
+
+<div class="card">
+<h2>報酬率情境比較</h2>
+<div class="tbl"><table id="sens"></table></div>
+<p class="note">報酬率不是保證值，建議保守、基準、樂觀三種情境都看一遍，用保守情境做計畫較安心。</p>
+</div>
+
+<div class="card">
+<h2>我的目標清單</h2>
+<div class="row" style="margin-bottom:8px"><button class="btn" id="save">＋ 儲存目前目標</button></div>
+<div id="saved"></div>
+<p class="note">目標只存在這台裝置的瀏覽器中。本工具僅為試算參考，不構成投資建議。</p>
+</div>
+</div>
+
+<script>
+var $=function(i){return document.getElementById(i)};
+var MODES={A:["需要每月存多少？","已知目標，求 PMT"],B:["照現在的存法能累積多少？","已知 PV＋PMT，求 FV"],C:["現在要一次投入多少？","已知目標與 PMT，求 PV"]};
+var PRESETS=[
+["🏖️ 退休金",{goal:"退休金",target:20000000,pv:500000,pmt:15000,years:25,rate:6,infl:2}],
+["🏠 房屋頭期款",{goal:"房屋頭期款",target:3000000,pv:200000,pmt:25000,years:5,rate:3,infl:2}],
+["🎓 子女教育基金",{goal:"子女教育基金",target:2000000,pv:100000,pmt:8000,years:15,rate:5,infl:2}],
+["✈️ 夢想旅行",{goal:"夢想旅行",target:300000,pv:0,pmt:10000,years:2,rate:2,infl:1}],
+["🛟 緊急預備金",{goal:"緊急預備金",target:600000,pv:50000,pmt:10000,years:4,rate:1.5,infl:1}]];
+var mode="A",goals=[];
+try{goals=JSON.parse(localStorage.getItem("goals")||"[]")}catch(e){}
+var ids=["goal","target","pv","pmt","years","rate","infl"];
+function fmt(n){return "NT$"+Math.round(n).toLocaleString("zh-TW")}
+function val(i){return parseFloat($(i).value)||0}
+function load(p){ids.forEach(function(i){$(i).value=p[i]});update()}
+function calc(rate,s){
+  var i=rate/1200,N=s.years*12,g=i?Math.pow(1+i,N):1,ann=i?(g-1)/i:N;
+  var pv=s.pv,pmt=s.pmt,fv;
+  if(mode==="A"){pmt=Math.max(0,(s.tgt-pv*g)/ann);}
+  if(mode==="C"){pv=Math.max(0,(s.tgt-pmt*ann)/g);}
+  fv=pv*g+pmt*ann;
+  return {pv:pv,pmt:pmt,fv:fv,i:i,N:N};
+}
+function state(){
+  var y=val("years"),inf=val("infl");
+  var t=val("target");
+  return {goal:$("goal").value,target:t,pv:val("pv"),pmt:val("pmt"),years:y,rate:val("rate"),infl:inf,
+    tgt:$("inflOn").checked?t*Math.pow(1+inf/100,y):t};
+}
+function update(){
+  $("yv").textContent=$("years").value;$("rv").textContent=$("rate").value;$("iv").textContent=$("infl").value;
+  $("f_pv").classList.toggle("hide",mode==="C");
+  $("f_pmt").classList.toggle("hide",mode==="A");
+  var s=state(),r=calc(s.rate,s);
+  var gap=r.fv-s.tgt,ok=gap>=-1;
+  var st=$("status");st.className="badge "+(ok?"ok":"bad");st.textContent=ok?"✔ 可達成":"✘ 尚有缺口";
+  var contrib=r.pv+r.pmt*r.N,interest=r.fv-contrib;
+  var k=function(l,v,m){return '<div class="kpi'+(m?' main':'')+'"><span>'+l+'</span><div>'+v+'</div></div>'};
+  $("res").innerHTML=
+    k("PV 現值（一次投入）",fmt(r.pv),mode==="C")+
+    k("PMT 每月投入",fmt(r.pmt),mode==="A")+
+    k("FV 終值（"+s.years+" 年後）",fmt(r.fv),mode==="B")+
+    k("目標所需名目金額",fmt(s.tgt))+
+    k("總投入本金",fmt(contrib))+
+    k("複利創造的收益",fmt(interest))+
+    k(ok?"超出目標":"與目標差距",fmt(Math.abs(gap)));
+  var real=r.fv/Math.pow(1+s.infl/100,s.years);
+  var msg="";
+  if(mode==="A")msg="要在 "+s.years+" 年內累積 "+fmt(s.tgt)+"，每月需存 "+fmt(r.pmt)+"。其中約 "+Math.round(Math.max(0,interest)/r.fv*100)+"% 由複利貢獻。";
+  else if(mode==="B")msg=ok?"照目前的存法，可超越目標 "+fmt(gap)+"。":"照目前的存法會短少 "+fmt(-gap)+"，可提高每月投入、拉長期間或調整目標。";
+  else msg="若每月固定投入 "+fmt(r.pmt)+"，現在只需一次投入 "+fmt(r.pv)+" 即可達標。";
+  msg+=" 以今天的購買力計算，終值約等於 "+fmt(real)+"。";
+  $("msg").textContent=msg;
+  draw(s,r);sens(s);
+}
+function draw(s,r){
+  var W=640,H=300,L=64,B=30,T=14,R=14,pw=W-L-R,ph=H-T-B,Y=s.years;
+  var a=[],p=[],mx=s.tgt;
+  for(var y=0;y<=Y;y++){var n=y*12,g=r.i?Math.pow(1+r.i,n):1,an=r.i?(g-1)/r.i:n;
+    a.push(r.pv*g+r.pmt*an);p.push(r.pv+r.pmt*n);}
+  mx=Math.max(mx,a[Y])*1.05||1;
+  var X=function(y){return L+pw*y/Y},V=function(v){return T+ph*(1-v/mx)};
+  var path=function(arr){return arr.map(function(v,y){return(y?"L":"M")+X(y).toFixed(1)+","+V(v).toFixed(1)}).join("")};
+  var h="";
+  for(var g=0;g<=4;g++){var v=mx*g/4,yy=V(v);
+    h+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy+'" y2="'+yy+'" stroke="var(--grid)"/><text x="'+(L-6)+'" y="'+(yy+4)+'" text-anchor="end" font-size="11" fill="var(--mute)">'+(v>=1e6?(v/1e6).toFixed(1)+"M":Math.round(v/1e3)+"K")+'</text>';}
+  var step=Math.max(1,Math.ceil(Y/8));
+  for(var y=0;y<=Y;y+=step)h+='<text x="'+X(y)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" fill="var(--mute)">'+y+'年</text>';
+  h+='<path d="'+path(p)+'" fill="none" stroke="var(--mute)" stroke-width="2" stroke-dasharray="5 4"/>';
+  h+='<path d="'+path(a)+'" fill="none" stroke="var(--brand)" stroke-width="3"/>';
+  h+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+V(s.tgt)+'" y2="'+V(s.tgt)+'" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="2 3"/>';
+  h+='<text x="'+(L+6)+'" y="'+(V(s.tgt)-6)+'" font-size="11" fill="var(--warn)">目標 '+fmt(s.tgt)+'</text>';
+  h+='<g font-size="12"><line x1="'+(L+10)+'" x2="'+(L+34)+'" y1="'+(T+14)+'" y2="'+(T+14)+'" stroke="var(--brand)" stroke-width="3"/><text x="'+(L+40)+'" y="'+(T+18)+'" fill="var(--ink)">資產價值</text><line x1="'+(L+110)+'" x2="'+(L+134)+'" y1="'+(T+14)+'" y2="'+(T+14)+'" stroke="var(--mute)" stroke-width="2" stroke-dasharray="5 4"/><text x="'+(L+140)+'" y="'+(T+18)+'" fill="var(--ink)">累計本金</text></g>';
+  $("chart").innerHTML=h;
+}
+function sens(s){
+  var rs=[Math.max(0,s.rate-2),s.rate,s.rate+2],nm=["保守","基準","樂觀"];
+  var head=mode==="A"?"每月需投入 PMT":mode==="C"?"需一次投入 PV":"終值 FV";
+  var h="<tr><th>情境</th><th>年報酬率</th><th>"+head+"</th><th>"+(mode==="B"?"與目標差距":"終值 FV")+"</th></tr>";
+  rs.forEach(function(x,i){var r=calc(x,s);
+    var main=mode==="A"?r.pmt:mode==="C"?r.pv:r.fv;
+    var last=mode==="B"?(r.fv-s.tgt>=0?"+":"−")+fmt(Math.abs(r.fv-s.tgt)):fmt(r.fv);
+    h+="<tr><td>"+nm[i]+"</td><td>"+x+"%</td><td><b>"+fmt(main)+"</b></td><td>"+last+"</td></tr>";});
+  $("sens").innerHTML=h;
+}
+function renderSaved(){
+  if(!goals.length){$("saved").innerHTML='<p class="note">尚未儲存任何目標。</p>';return}
+  $("saved").innerHTML=goals.map(function(g,i){
+    var pct=Math.min(100,Math.round(g.pv/(g.target||1)*100));
+    return '<div class="goal"><div style="flex:1"><b>'+g.goal.replace(/</g,"&lt;")+'</b>　<span class="note">目標 '+fmt(g.target)+'・'+g.years+' 年・'+g.rate+'%</span><div class="bar"><i style="width:'+pct+'%"></i></div><span class="note">目前本金達成 '+pct+'%</span></div><a onclick="loadG('+i+')">載入</a><a onclick="delG('+i+')">刪除</a></div>';}).join("");
+}
+function persist(){try{localStorage.setItem("goals",JSON.stringify(goals))}catch(e){}}
+function loadG(i){load(goals[i])}
+function delG(i){goals.splice(i,1);persist();renderSaved()}
+$("save").onclick=function(){var o={};ids.forEach(function(i){o[i]=i==="goal"?$(i).value:val(i)});goals.push(o);persist();renderSaved()};
+$("presets").innerHTML=PRESETS.map(function(p,i){return '<button class="chip" data-i="'+i+'">'+p[0]+'</button>'}).join("");
+$("presets").onclick=function(e){var b=e.target.closest("button");if(b)load(PRESETS[b.dataset.i][1])};
+$("modes").innerHTML=Object.keys(MODES).map(function(k){return '<button data-m="'+k+'">'+MODES[k][0]+'<small>'+MODES[k][1]+'</small></button>'}).join("");
+function setMode(m){mode=m;[].forEach.call($("modes").children,function(b){b.classList.toggle("on",b.dataset.m===m)});update()}
+$("modes").onclick=function(e){var b=e.target.closest("button");if(b)setMode(b.dataset.m)};
+ids.concat(["inflOn"]).forEach(function(i){$(i).addEventListener("input",update)});
+load(PRESETS[0][1]);setMode("A");renderSaved();
+</script>
+</body>
+</html>
